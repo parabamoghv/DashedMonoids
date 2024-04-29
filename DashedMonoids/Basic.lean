@@ -17,7 +17,7 @@ set_option maxHeartbeats 0
 
 --universe u v w
 
---#check List.up_List
+#check List.ListTwoOrMore_neq_ListOne
 
 
 --variable {S: Type _}
@@ -148,7 +148,7 @@ def Gen_dash (X:Set M):Set M:= by
 --Composite elements of Gen_dash
 def GenP_dash (X:Set M):Set M:= by
   intro z
-  exact ∃ r:Nat, r>0 ∧ ∃ x:X, dash_k r x.1=z
+  exact ∃ r:Nat, r≠ 0 ∧ ∃ x:X, dash_k r x.1=z
 
 def is_GenSet_dash (X:Set M):Prop:= Gen_dash X = M_pos
 
@@ -159,13 +159,19 @@ def is_Basis_dash (X:Set M):Prop:= is_GenSet_dash X ∧ is_Indp_dash X
 end Basis_dash
 
 
---section Mul
+section Mul
 
 --Taking mul of an of an list
-def mul_L (L:List M):M:=by
+def mul_L_ (L:List M):M:=by
   induction' L with head _ tail_h
   case nil => exact 1
   case cons => exact head*tail_h
+
+def mul_L (L:List M):M:= by
+  match L with
+  | [] => exact (1:M)
+  | a::L => exact a*mul_L L
+
 
 --Taking zero dashes is same as id
 theorem mul_L_zero :mul_L  [] = 1:=by
@@ -174,15 +180,17 @@ theorem mul_L_zero :mul_L  [] = 1:=by
 --Taking one mul is same as itself
 theorem mul_L_one (x:M):mul_L [x] = x:= by
   rw[mul_L]
+  rw[mul_L]
   simp only [mul_one]
 
 --Taking two mul is same as mul
 theorem mul_L_two (x y:M):mul_L [x, y] = x*y:= by
   rw[mul_L]
+  rw[mul_L]
+  rw[mul_L]
   simp only [mul_one]
 
 theorem mul_L_succ (x:M)(L: List M):mul_L (x::L) = x*(mul_L L):= by
-  rw[mul_L]
   rw[mul_L]
 
 -- def to_List_M (X:Set M)(L:List X):List M:=by
@@ -226,10 +234,10 @@ structure FreeDMon_like (M:Type)[DMon M] where
 
 def mul_compos (St: FreeDMon_like M):Set M:=GenP_dash St.dash_basis
 
---If X is mul indep then gen X = X cup genP x
+--If X is mul indep then gen X = X sqcup genP x
 
 variable (X:Set M)
-lemma mul_gen_eq_cup_genP (mul_idep: is_mul_indp_set X):mul_gen_X X = X ∪ mul_genP_X X:= by
+lemma mul_gen_eq_cup_genP :mul_gen_X X = X ∪ mul_genP_X X:= by
   ext x
   constructor
   case mp =>
@@ -240,16 +248,212 @@ lemma mul_gen_eq_cup_genP (mul_idep: is_mul_indp_set X):mul_gen_X X = X ∪ mul_
         have hL1 := hL.1
         contradiction
     | [a] =>
+        left
         have hL2 := hL.2
         have h:= mul_L_one_to_List_M X a
         rw[h] at hL2
-        left
         rw[← hL2]
         exact a.2
-    | a::b::L => sorry
+    | a::b::L =>
+        right
+        constructor
+        case w=>
+          exact a::b::L
+        case h=>
+          constructor
+          case left =>
+              constructor
+              case left=>
+                  exact hL.1
+              case right=>
+                  exact List.ListTwoOrMore_neq_ListOne a b L
+          case right =>
+              exact hL.2
   case mpr =>
+    rintro (hxL| hxR)
+    case inl =>
+      constructor
+      case w=>
+        exact [⟨ x, hxL⟩ ]
+      case h=>
+        constructor
+        case left=>
+          exact List.ListOne_neq_ListNil (⟨x, hxL⟩:X)
+        case right=>
+          exact mul_L_one_to_List_M  X ⟨x, hxL ⟩
+    case inr =>
+      rcases hxR with ⟨L, hL ⟩
+      constructor
+      case w=>
+        exact L
+      case h=>
+        constructor
+        case left=>
+          exact hL.1.1
+        case right=>
+          exact hL.2
 
-    sorry
+
+lemma X_disjoint_GenP_mul (mul_indp: is_mul_indp_set X):X∩ mul_genP_X X = ∅:= by
+  ext x
+  constructor
+  case mp=>
+    rintro ⟨xinX, xinGenP ⟩
+    rcases   xinGenP with ⟨L, hL ⟩
+    --have contra:=mul_indp
+    specialize mul_indp L [⟨ x, xinX⟩ ] hL.1.1
+    specialize mul_indp (List.ListOne_neq_ListNil (⟨x, xinX ⟩ ))
+    have h1:=  mul_L_one_to_List_M X ⟨x, xinX ⟩
+    have h2:mul_L (List.up_List L)=mul_L (List.up_List [⟨x, xinX ⟩ ]):= by
+      rw[h1]
+      exact hL.2
+    specialize mul_indp h2
+    --have hL:= hL.1.2
+    --specialize hL ⟨x, xinX ⟩
+    --simp only [Set.mem_empty_iff_false]
+    exact hL.1.2 ⟨x, xinX ⟩  mul_indp
+  case mpr=>
+    simp only [Set.mem_empty_iff_false, Set.mem_inter_iff, IsEmpty.forall_iff]
+
+--for reference
+-- def is_mul_indp_set (X:Set M):Prop:= ∀  L :List X, ∀ P:List X,  L≠ []→ P≠ []→ ((mul_L (List.up_List L)) = (mul_L (List.up_List  P))) → L=P
+
+lemma mul_indp_sub {X Y:Set M}:(mul_indp:is_mul_indp_set X)→ Y⊆ X→ is_mul_indp_set Y:=sorry
+
+
+
+
+lemma dash_gen_eq_cup_genP :Gen_dash X = X ∪ GenP_dash X:= by
+  ext x
+  constructor
+  case mp=>
+    rintro ⟨k,⟨a,ha⟩  ⟩
+    by_cases k_zero:k=0
+    case pos=>
+      left
+      rw[k_zero] at ha
+      rw[dash_zero a.1] at ha
+      rw[← ha]
+      exact a.2
+    case neg=>
+      right
+      constructor
+      case w=>
+        exact k
+      case h=>
+        constructor
+        case left=>
+          exact k_zero
+        case right=>
+          use a
+  case mpr=>
+    rintro (hx|⟨k,hk ⟩ )
+    case inl=>
+      constructor
+      case w=>
+        exact 0
+      case h=>
+        use ⟨x, hx ⟩
+        exact dash_zero x
+    case inr=>
+      constructor
+      case w=>
+        exact k
+      case h=>
+        exact hk.2
+
+
+lemma X_disjoint_GenP_dash (mul_indp: is_Indp_dash X):X∩ GenP_dash X = ∅:= by
+  ext x
+  constructor
+  case mp=>
+    rintro ⟨xinX, ⟨k,⟨ k_ne_0, ⟨a,ha⟩ ⟩ ⟩  ⟩
+    specialize mul_indp 0 ⟨x, xinX ⟩ k a
+    have h1:=dash_zero (x)
+    rw[← h1] at ha
+    specialize mul_indp ha.symm
+    exact k_ne_0 mul_indp.1.symm
+  case mpr=>
+    simp only [Set.mem_empty_iff_false, Set.mem_inter_iff, IsEmpty.forall_iff]
+
+--for reference
+-- def is_Indp_dash (X:Set M):Prop:= ∀  r:Nat, ∀  x:X, ∀  k:Nat, ∀ y:X, (dash_k r x.1 = dash_k k y.1)→ (r=k ∧ x=y)
+
+lemma dash_indp_sub {X Y:Set M}:(dash_indp:is_Indp_dash X)→ Y⊆ X→ is_Indp_dash Y:=by
+  intro dash_indp XsubY
+  intro r x k y dash_eq
+  specialize dash_indp r ⟨x.1, XsubY x.2 ⟩
+  specialize dash_indp k ⟨y.1, XsubY y.2 ⟩
+  specialize dash_indp dash_eq
+  --simp at dash_indp
+  constructor
+  case left=>
+    exact dash_indp.1
+  case right=>
+    have dash_indp := dash_indp.2
+    simp only [Subtype.mk.injEq] at dash_indp
+    ext
+    exact dash_indp
+
+
+example {X Y:Set M}:GenP_dash (X∪ Y) = (GenP_dash X)∪ (GenP_dash Y):= by
+  ext x
+  constructor
+  case mp=>
+    rintro ⟨k,⟨k_ne_0,⟨a,ha ⟩  ⟩  ⟩
+    rcases a with ⟨ a, (aX|aY)⟩
+    case inl=>
+      left
+      use k
+      constructor
+      case left=>
+        exact k_ne_0
+      case right=>
+        use ⟨a, aX ⟩
+    case inr=>
+      right
+      use k
+      constructor
+      case left=>
+        exact k_ne_0
+      case right=>
+        use ⟨a, aY ⟩
+  case mpr=>
+    rintro (⟨k,⟨k_ne_0,⟨a,ha ⟩  ⟩  ⟩ |⟨k,⟨k_ne_0,⟨a,ha ⟩  ⟩  ⟩)
+    case inl=>
+      use k
+      constructor
+      case left=>
+        exact k_ne_0
+      case right=>
+        constructor
+        case w=>
+          constructor
+          case val=>
+            exact a.1
+          case property=>
+            left
+            exact a.2
+        case h=>
+          exact ha
+    case inr=>
+      use k
+      constructor
+      case left=>
+        exact k_ne_0
+      case right=>
+        constructor
+        case w=>
+          constructor
+          case val=>
+            exact a.1
+          case property=>
+            right
+            exact a.2
+        case h=>
+          exact ha
+
+
 
 def Count:List M→ Nat:= by
   intro L
