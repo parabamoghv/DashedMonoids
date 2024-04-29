@@ -35,5 +35,3 @@ example (a b:S)(L:List S):a::b::L≠ []:=by
 
 example (a b:S)(L:List S):∀ x:S, a::b::L≠ [x]:=by
   simp only [ne_eq, cons.injEq, and_false, not_false_eq_true, implies_true]
-
-#check List
