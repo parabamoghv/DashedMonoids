@@ -14,9 +14,10 @@ set_option maxHeartbeats 0
 --Make DashAssignmen file
 --Make Dashed words file
 
+#check Classical.choose
+#check Classical.choose_spec
 
 --universe u v w
-
 #check List.ListTwoOrMore_neq_ListOne
 
 
@@ -454,6 +455,45 @@ example {X Y:Set M}:GenP_dash (X∪ Y) = (GenP_dash X)∪ (GenP_dash Y):= by
           exact ha
 
 
+example {X Y Z:Set M}:(is_Indp_dash Z)→ (X⊆ Z)→ (Y⊆ Z)→ (X∩ Y =∅ )→ (GenP_dash X)∩ (GenP_dash Y)=∅ := by
+  intro IndpZ XsubZ YsubZ Disj
+  ext x
+  constructor
+  case mp=>
+    rintro ⟨⟨r, ⟨_,⟨a,ha ⟩ ⟩ ⟩ ,⟨k, ⟨_,⟨b,hb ⟩ ⟩ ⟩ ⟩
+    specialize IndpZ r ⟨a.1, XsubZ a.2 ⟩
+    specialize IndpZ k ⟨b.1, YsubZ b.2⟩
+    have h1:dash_k r a.1= dash_k k b.1:= by
+      rw[ha]
+      rw[← hb]
+    specialize IndpZ h1
+    have IndpZ:=IndpZ.2
+    simp at IndpZ
+    have h2:a.1∈ X∩ Y :=by
+      constructor
+      case left=>
+        exact a.2
+      case right=>
+        rw[IndpZ]
+        exact b.2
+    rw[Disj] at h2
+    exact h2
+  case mpr=>
+    simp only [Set.mem_empty_iff_false, Set.mem_inter_iff, IsEmpty.forall_iff]
+
+#check exists_unique_eq.elim
+#check exists_unique_eq
+#check ExistsUnique
+
+example (p:M→ Prop)(h:ExistsUnique p):True:=by
+  rcases h with ⟨_,_ ⟩
+  sorry
+
+noncomputable example {X:Set M}(Indp:is_Indp_dash X)(x:Gen_dash X):Nat:=by
+  rcases x with ⟨x, prop  ⟩
+  have n:= Classical.choose prop
+  have h:= Classical.choose_spec prop
+  exact n
 
 def Count:List M→ Nat:= by
   intro L
