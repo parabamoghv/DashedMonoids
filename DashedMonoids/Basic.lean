@@ -191,21 +191,32 @@ theorem mul_L_two (x y:M):mul_L [x, y] = x*y:= by
   rw[mul_L]
   simp only [mul_one]
 
+--mul (x::L) = x * mul L
 theorem mul_L_succ (x:M)(L: List M):mul_L (x::L) = x*(mul_L L):= by
   rw[mul_L]
 
+
+-- Following function is in DashedMonoids/ListProp
+-- For X⊆ M given L:List X it gives a List in M.
 -- def to_List_M (X:Set M)(L:List X):List M:=by
 --   induction' L with head _ tail_h
 --   case nil=> exact []
 --   case cons=> exact (head.1)::tail_h
 
-theorem mul_L_one_to_List_M (X:Set M)(x: X):mul_L (List.up_List  [x]) = x:= by
+
+
+theorem mul_L_one_on_subset (X:Set M)(x: X):mul_L (List.up_List  [x]) = x:= by
   have h:List.up_List  [x] = [x.1] :=by
     rw[List.up_List]
   rw[h]
   exact mul_L_one x.1
 
-def mul_gen_X (X:Set M):Set M:= by
+end Mul
+
+
+section Basis_mul
+
+def Gen_mul (X:Set M):Set M:= by
   intro z
   exact ∃ L:List X, L≠ [] ∧  mul_L (List.up_List L) = z
 
@@ -214,7 +225,7 @@ def mul_genP_X (X:Set M):Set M:= by
   intro z
   exact ∃ L:List X, (L≠ [] ∧ (∀ a:X, L≠ [a] )) ∧ (mul_L (List.up_List L) = z)
 
-def is_mul_gen_set (X:Set M):Prop:= mul_gen_X X = M_pos
+def is_mul_gen_set (X:Set M):Prop:= Gen_mul X = M_pos
 
 def is_mul_indp_set (X:Set M):Prop:= ∀  L :List X, ∀ P:List X,  L≠ []→ P≠ []→ ((mul_L (List.up_List L)) = (mul_L (List.up_List  P))) → L=P
 
@@ -238,7 +249,7 @@ def mul_compos (St: FreeDMon_like M):Set M:=GenP_dash St.dash_basis
 --If X is mul indep then gen X = X sqcup genP x
 
 variable (X:Set M)
-lemma mul_gen_eq_cup_genP :mul_gen_X X = X ∪ mul_genP_X X:= by
+lemma mul_gen_eq_cup_genP :Gen_mul X = X ∪ mul_genP_X X:= by
   ext x
   constructor
   case mp =>
@@ -251,7 +262,7 @@ lemma mul_gen_eq_cup_genP :mul_gen_X X = X ∪ mul_genP_X X:= by
     | [a] =>
         left
         have hL2 := hL.2
-        have h:= mul_L_one_to_List_M X a
+        have h:= mul_L_one_on_subset X a
         rw[h] at hL2
         rw[← hL2]
         exact a.2
@@ -281,7 +292,7 @@ lemma mul_gen_eq_cup_genP :mul_gen_X X = X ∪ mul_genP_X X:= by
         case left=>
           exact List.ListOne_neq_ListNil (⟨x, hxL⟩:X)
         case right=>
-          exact mul_L_one_to_List_M  X ⟨x, hxL ⟩
+          exact mul_L_one_on_subset  X ⟨x, hxL ⟩
     case inr =>
       rcases hxR with ⟨L, hL ⟩
       constructor
@@ -304,7 +315,7 @@ lemma X_disjoint_GenP_mul (mul_indp: is_mul_indp_set X):X∩ mul_genP_X X = ∅:
     --have contra:=mul_indp
     specialize mul_indp L [⟨ x, xinX⟩ ] hL.1.1
     specialize mul_indp (List.ListOne_neq_ListNil (⟨x, xinX ⟩ ))
-    have h1:=  mul_L_one_to_List_M X ⟨x, xinX ⟩
+    have h1:=  mul_L_one_on_subset X ⟨x, xinX ⟩
     have h2:mul_L (List.up_List L)=mul_L (List.up_List [⟨x, xinX ⟩ ]):= by
       rw[h1]
       exact hL.2
