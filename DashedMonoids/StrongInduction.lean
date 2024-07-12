@@ -238,6 +238,29 @@ end Slice
 
 section Induction
 
+inductive empty:Type _ where
+
+
+example {p q:Prop} :((p→ q))↔ (( ¬  p) ∨   q):=by
+  constructor
+  case mp=>
+    intro h
+    by_cases x:p
+    case pos=>
+      right
+      exact h x
+    case neg=>
+      left
+      exact x
+  case mpr=>
+    intro h t
+    cases h
+    case inl x=>
+      by_contra _
+      exact x t
+    case inr x=>
+      exact x
+
 
 structure StrongInduction (X Y:Type _) where
   Len :X→ Nat
@@ -293,3 +316,38 @@ end Induction
 
 
 end Nat
+
+
+inductive NOT (A:Type _) :Type _
+  | intro (h:A→ False) : NOT A
+
+inductive AND (A B:Type _) :Type _
+  | intro (a:A)(b:B) : AND A B
+
+inductive OR (A B:Type _) :Type _
+  | inl (a:A) : OR A B
+  | inr (b:B) : OR A B
+
+example (A B C:Type _)(f:A→ C)(g:B→ C): OR A B → C:=by
+  rintro (a| b)
+  case inl=>
+    exact f a
+  case inr=>
+    exact g b
+
+def inlOR (A B:Type _):A→ OR A B:= λ a=> OR.inl a
+
+example (A B C:Type _)(u v:OR A B→ C):(∀ a:A, u  (OR.inl a) = v (OR.inl a))→ (∀ b:B, u (OR.inr b) = v (OR.inr b)) → u = v:=by
+  intro ha hb
+  ext (a|b)
+  case inl=>
+    exact ha a
+  case inr=>
+    exact hb b
+
+-- Define an inductive type for equivalence between two types
+structure EQ (A B : Type) :=
+(to_fun    : A → B)
+(inv_fun   : B → A)
+(left_inv  : ∀ x : A, inv_fun (to_fun x) = x)
+(right_inv : ∀ y : B, to_fun (inv_fun y) = y)

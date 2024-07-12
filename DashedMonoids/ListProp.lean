@@ -217,7 +217,6 @@ def func (L:M→ Nat)(h:(n:Nat)→ (eq_elements L n → P)→ (eq_elements L (su
   have ans:= @strong_induction1 M P L (L x) h ⟨x, rfl ⟩
   exact ans
 
-  sorry
 
 
 end Nat

@@ -483,6 +483,10 @@ theorem Empty_Add_BrSet {n m:Nat}:BrSet_Eq (BrSet_Add (BrSet_Empty n) m) (BrSet_
     rintro ⟨B, hB ⟩
     exact hB.elim
 
+
+
+
+
 --Every A in D+m is less than n
 theorem BrSet_Add_leq {D:Set (IntervalP n)}{m:Nat}:∀ A:(BrSet_Add D m), A.1.End≤ n:= by
   rintro ⟨⟨AStart, AEnd, ALe, Asubn⟩ , hA ⟩
@@ -511,6 +515,17 @@ theorem BrSet_Add_EmptyInter {D:Set (IntervalP n)}{m:Nat}:∀ (L R:D),(h: Disjoi
 def Add_BrSet (n:Nat)(D:Set (IntervalP m)):Set (IntervalP (n+m)):= by
   intro M
   exact ∃ L:D, Add_IntervalP n L.1 = M
+
+
+-- n + Empty(m) =Empty(n+m)
+theorem BrSet_Add_Empty {n m:Nat}:BrSet_Eq (Add_BrSet n (BrSet_Empty m)) (BrSet_Empty (n+m)):= by
+  constructor
+  case D_Sub_E=>
+    rintro ⟨L,⟨⟨a,ha ⟩ , hAL ⟩  ⟩
+    exact ha.elim
+  case E_Sub_D=>
+    rintro ⟨B, hB ⟩
+    exact hB.elim
 
 
 --0+D = D
@@ -759,12 +774,162 @@ theorem unit_mul (E:Br m):Br_Eq (mul I_Br E) E:=by
     exact BrSet_Eq_rfl
 
 
+--E*I=E
+theorem mul_unit (E:Br m):Br_Eq (mul E I_Br) E:=by
+  constructor
+  case eqnm=>
+    exact Nat.add_zero m
+  case eqBrSet=>
+    have h1:BrSet_Eq (BrSet_Add E.1 0) E.1:=BrSet_Add_zero E.1
+    have h2:BrSet_Eq ((BrSet_Empty (m+0))∪ (BrSet_Add E.1 0)) (BrSet_Add E.1 0):= BrSet_Empty_Union
+    have h3:BrSet_Eq ((BrSet_Add E.1 0)∪ (Add_BrSet m I_Br.1)) ((BrSet_Empty (m+0))∪ (BrSet_Add E.1 0)):= by
+      --apply BrSet_Eq_Union
+      sorry
+      --exact BrSet_Add_Empty
+
+    apply BrSet_Eq_trans h3
+    apply BrSet_Eq_trans h2
+    apply BrSet_Eq_trans h1
+    exact BrSet_Eq_rfl
 
 
 
+-- Import necessary modules
+--import data.list.basic
+
+-- Define the mutual inductive types
+mutual
+
+inductive Tree:Type _ where
+| leaf : Tree
+| node : ℕ → Forest → Tree
+
+inductive Forest : Type where
+| nil : Forest
+| cons : Tree → Forest → Forest
+
+end
+
+-- Define some examples of Tree and Forest
+open Tree Forest
+
+-- Example of a simple tree
+def tree1 : Tree := leaf
+
+-- Example of a more complex tree
+def tree2 : Tree := node 1 (cons (node 2 nil) (cons leaf nil))
+
+-- Example of a forest
+def forest1 : Forest := cons tree1 (cons tree2 nil)
+
+-- A function to count the number of nodes in a tree
+mutual
+
+def count_nodes : Tree → ℕ
+| leaf => 0
+| (node _ f) => 1 + count_nodes_in_forest f
+
+def count_nodes_in_forest : Forest → ℕ
+| nil => 0
+| (cons t f) => count_nodes t + count_nodes_in_forest f
+
+end
+
+-- Example usage
+#eval count_nodes tree2
+ -- Output should be 2
+#eval count_nodes_in_forest forest1  -- Output should be 2
+
+def List.len {X:Type _} (f:X→ Nat):List X → Nat
+| [] => 0
+| a::L => f a + (List.len f L)
+
+inductive List2 (X:Type _) where
+| Cons (x y:X)(tail:List X) : List2 X
+
+def List2.len {X:Type _}(f: X→ Nat ):List2 X→ Nat
+| Cons x y tail => (f x) + (f y) + List.len f tail
+
+mutual
+
+inductive MulBasis (X:Type _):Type _ where
+| incS : (x:X) →  MulBasis X
+| GenPdash  (n:Nat)(y:DashBasis X): MulBasis X
 
 
+inductive DashBasis (X:Type _) :Type _ where
+| incS (x:X) : DashBasis X
+| GenPmul (y:List (MulBasis X)) : DashBasis X
 
+end
+
+inductive MulBasisB (X:Type _): Type _ where
+| Sinf (a:X) (k:Nat) : MulBasisB X
+| Base (x)
+| Cons (m:Nat) (L: Fin m→  (MulBasisB X)) (k:Nat) : MulBasisB X
+
+def Fin.len {X:Type _}(f:X→ Nat):(m:Nat) → (Fin m→ X) → Nat:= by
+  intro m len
+  exact f (len 0)
+  sorry
+
+def MulBasisB.len {X:Type _} : MulBasisB X→ Nat
+| Sinf a k => 1
+| Cons m L k => Fin.len MulBasisB.len m L
+
+
+inductive MulBasisC (X:Type _): Type _ where
+| Sinf (a:X) (k:Nat) : MulBasisC X
+| Cons (L: List2 (MulBasisC X)) (k:Nat) : MulBasisC X
+
+def MulBasisC.lenProp {X:Type _}(len: MulBasisC X→ Nat):Prop:= ∀ x:MulBasisC X, match x with
+| Sinf a k => len (Sinf a k) = 1
+| Cons L  k=> len x = List2.len len L
+
+example {X:Type _}(len: MulBasisC X→ Nat)(hy:MulBasisC.lenProp len):∀ a:X, ∀ k:Nat, len (MulBasisC.Sinf a k) = 1:= by
+  intro a k
+  specialize hy (MulBasisC.Sinf a k)
+  simp at hy
+  exact hy
+
+class DMon (M:Type _) extends Monoid M where
+  dash : M → M
+  unit_dash : dash 1 = 1
+
+variable {M:Type _}[stM: DMon M]
+
+
+def induce {S :Type _}(f:S→ M):MulBasisC S → M
+| MulBasisC.Sinf a k => 1
+| MulBasisC.Cons L k => 1
+
+def MulBasisC.len {X:Type _} : MulBasisC X→ Nat
+| Sinf a k => 1
+| Cons L k => List2.len MulBasisC.len L
+
+--  := by
+--   rintro (⟨a, k ⟩ |b)
+--   case Sinf =>
+--     exact 1
+--   case Cons =>
+--     exact List2.len LenMulC b
+
+mutual
+
+def LenMul {X:Type _}:MulBasis X→ Nat:= by
+  rintro  (x|n)
+  case incS=>
+    exact 1
+  case GenPdash y =>
+    exact LenDash y
+
+def LenDash {X:Type _} : DashBasis X → Nat := by
+  rintro (x|L)
+  case incS=>
+    exact 1
+  case GenPmul =>
+    exact List.len LenMul L
+end
 
 
 
