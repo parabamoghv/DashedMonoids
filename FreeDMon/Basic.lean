@@ -26,7 +26,7 @@ set_option maxHeartbeats 0
 
 --variable {i n m: Nat}
 
-namespace DashedMonoid
+--namespace DashedMonoid
 
 --This file should have basic definitions/results about Dashed Monoids. Definitions: DMon, Dash, k-dashes, m-multiplication, GenSets wrt dash and mul, Ind wrt dash
 
@@ -315,14 +315,1646 @@ end induce
 
 
 
-section mul
+section FDMon
+
+section Definition
 
 -- DMon S = {I} ⊔ G ⊔ MulG
 --        = {I} ⊔ S ⊔ DashH ⊔ MulS ⊔ EMulDashH
 --        = {I} ⊔ S ⊔ DashS ⊔ DashMulG ⊔ MulS ⊔ EMulDashH
+
+-- DMon S = {I} ⊔ H ⊔ DashH
+--        = {I} ⊔ S ⊔ MulG ⊔ DashS ⊔ DashMulG
+--        = {I} ⊔ S ⊔ MulS ⊔ EMulDashH ⊔ DashS ⊔ DashMulG
+
 inductive FDMon (S:Type _)
   | I : FDMon S
   | incS : (a: S) → FDMon S
-  | incDashS: (x: )
+  | incDashS: (x: DashS S) → FDMon S
+  | incDashMulG : (x: DashMulG S) → FDMon S
+  | incMulS : (x: MulS S) → FDMon S
+  | incEMulDashH : (x: EMulDashH S) → FDMon S
+
+end Definition
+
+namespace FDMon
+
+section induce
+
+variable {M:Type _}[stM: DMon M]
+
+def induce {S:Type _}: (f:S→ M) →  FDMon S→ M := by
+    intro f x
+    match x with
+    | I => exact 1
+    | incS  (a: S) => exact  f a
+    | incDashS (x: DashS S) => exact  DashS.induce f x
+    | incDashMulG  (x: DashMulG S) => exact  DashMulG.induce f x
+    | incMulS (x: MulS S) => exact MulS.induce f x
+    | incEMulDashH (x: EMulDashH S) => exact EMulDashH.induce f x
+
+
+def len {S:Type _} : FDMon S→ Nat
+  | I => 0
+  | incS  (_: S) => 1
+  | incDashS (x: DashS S) => DashS.len x
+  | incDashMulG  (x: DashMulG S) => DashMulG.len x
+  | incMulS (x: MulS S) => MulS.len x
+  | incEMulDashH (x: EMulDashH S) => EMulDashH.len x
+
+end induce
+
+section dash
+
+def dash {S:Type _} : FDMon S → FDMon S
+  | I => I
+  | incS a => incDashS (DashS.base a 0)
+  | incDashS (x: DashS S) => match x with
+                    | DashS.base a k => incDashS (DashS.base a (k+1))
+
+  | incDashMulG  (x: DashMulG S) => match x with
+                                -- DashMulS    --dash y k = y^{(k+1)}
+                    | DashMulG.cons_MulS (y:MulS S)  (kp: Nat) => incDashMulG (DashMulG.cons_MulS y (kp+1))  --kp means take (kp+1) dash
+  -- DashEMulDashH    --dash y k = y^{(k+1)}
+                    | DashMulG.cons_EMulDashH (y: EMulDashH S)  (kp : Nat) => incDashMulG (DashMulG.cons_EMulDashH y (kp+1))--kp means take (kp+1) dash
+
+
+  | incMulS (x: MulS S) => incDashMulG (DashMulG.cons_MulS x 0)
+
+  | incEMulDashH  (x: EMulDashH S) => incDashMulG (DashMulG.cons_EMulDashH x 0)
+
+theorem dash.incS {S:Type _} :∀ a:S, dash (incS a) = incDashS (DashS.base a 0):= by
+    intro a
+    rw[dash]
+
+theorem dash.incDashS {S:Type}:∀ a:S, ∀ k:Nat, dash (incDashS (DashS.base a k)) = incDashS (DashS.base a (k+1)):=by
+    intro a k
+    rw[dash]
+
+theorem dash.incMulS {S:Type}:∀ y:MulS S, dash (incMulS y)= incDashMulG (DashMulG.cons_MulS y 0):= by
+    intro y
+    rw[dash]
+
+theorem dash.incDashMulG.MulS {S:Type}:∀ y:MulS S, ∀ k:Nat, dash (incDashMulG (DashMulG.cons_MulS y k))= incDashMulG (DashMulG.cons_MulS y (k+1)):= by
+    intro y k
+    rw[dash]
+
+theorem dash.incEMulDashH {S:Type}:∀ y:EMulDashH S, dash (incEMulDashH y)= incDashMulG (DashMulG.cons_EMulDashH y 0):= by
+    intro y
+    rw[dash]
+
+theorem dash.incDashMulG.EMulDashH {S:Type}:∀ y:EMulDashH S, ∀ k:Nat, dash (incDashMulG (DashMulG.cons_EMulDashH y k))= incDashMulG (DashMulG.cons_EMulDashH y (k+1)):= by
+    intro y k
+    rw[dash]
+
+theorem dash_unit {S:Type _}: @FDMon.dash S I = I := by
+  rw[dash]
+
+
+theorem len_dash  {S:Type _} : ∀ x:FDMon S, len (dash x) = len x:= by
+  intro x
+  match x with
+  | I => rw[dash]
+
+  | incS  (a: S) =>
+      rw[dash]
+      simp
+      rw[len]
+      simp
+      rw[DashS.len]
+      simp
+      rw[len]
+
+  | incDashS (x: DashS S) =>
+      match x with
+      | DashS.base a k =>
+          rw[dash]
+          simp
+          rw[len]
+          simp
+          rw[DashS.len]
+          simp
+          rw[len]
+          simp
+          rw[DashS.len]
+
+
+
+  | incDashMulG  (x: DashMulG S) =>
+      match x with
+      | DashMulG.cons_MulS y k =>
+          rw[dash]
+          simp
+          rw[len]
+          simp
+          rw[DashMulG.len]
+          rw[len]
+          simp
+          rw[DashMulG.len]
+
+      | DashMulG.cons_EMulDashH y k =>
+          rw[dash]
+          simp
+          rw[len]
+          simp
+          rw[DashMulG.len]
+          rw[len]
+          simp
+          rw[DashMulG.len]
+
+
+
+  | incMulS (x: MulS S) =>
+      rw[dash]
+      simp
+      rw[len]
+      simp
+      rw[DashMulG.len]
+      rw[len]
+
+
+  | incEMulDashH  (x: EMulDashH S) =>
+      rw[dash]
+      simp
+      rw[len]
+      simp
+      rw[DashMulG.len]
+      rw[len]
+
+end dash
+
+section mul
+
+def mul {S:Type _} :(FDMon S) → FDMon S → FDMon S := by
+  intro x y
+  match x with
+  | I => exact y
+  | incS  (a: S) =>
+        match y with
+        | I => exact x
+
+        | incS  (b: S) =>
+            exact incMulS (MulS.base a b)
+
+        | incDashS (w: DashS S) =>
+            exact incEMulDashH (EMulDashH.base_S_DashS a w)
+
+        | incDashMulG  (w: DashMulG S) =>
+            exact incEMulDashH (EMulDashH.base_S_DashMulG a w)
+
+        | incMulS (w: MulS S) =>
+            exact incMulS (MulS.cons a w)
+
+        | incEMulDashH (w: EMulDashH S) =>
+            exact incEMulDashH (EMulDashH.cons_S_self a w)
+
+  | incDashS (z: DashS S) =>
+        match y with
+        | I => exact x
+
+        | incS  (b: S) =>
+            exact incEMulDashH (EMulDashH.base_DashS_S z b)
+
+        | incDashS (w: DashS S) =>
+            exact incEMulDashH (EMulDashH.base_DashS_DashS z w)
+
+        | incDashMulG  (w: DashMulG S) =>
+            exact incEMulDashH (EMulDashH.base_DashS_DashMulG z w)
+
+        | incMulS (w: MulS S) =>
+            exact incEMulDashH (EMulDashH.cons_DashS_MulS z w)
+
+        | incEMulDashH (w: EMulDashH S) =>
+            exact incEMulDashH (EMulDashH.cons_DashS_self z w)
+
+  | incDashMulG  (z: DashMulG S) =>
+        match y with
+        | I => exact x
+
+        | incS  (b: S) =>
+            exact incEMulDashH (EMulDashH.base_DashMulG_S z b)
+
+        | incDashS (w: DashS S) =>
+            exact incEMulDashH (EMulDashH.base_DashMulG_DashS z w)
+
+        | incDashMulG  (w: DashMulG S) =>
+            exact incEMulDashH (EMulDashH.base_DashMulG_DashMulG z w)
+
+        | incMulS (w: MulS S) =>
+            exact incEMulDashH (EMulDashH.cons_DashMulG_MulS z w)
+
+        | incEMulDashH (w: EMulDashH S) =>
+            exact incEMulDashH (EMulDashH.cons_DashMulG_self z w)
+
+  | incMulS (z: MulS S) =>
+        match z with
+        | MulS.base a1 a2 =>
+          exact mul (incS a1) (mul (incS a2) (y))
+
+        | MulS.cons a1 z1 =>
+          exact mul (incS a1) (mul (incMulS z1) (y))
+
+
+
+
+  | incEMulDashH (z: EMulDashH S) =>
+        match z with
+            --base first from DashS second from DashS
+            | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+                exact mul (incDashS a1) (mul (incDashS a2) (y))
+            --base first from DashS second DashMulG
+            | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+                exact mul (incDashS a1) (mul (incDashMulG a2) (y))
+            --base first from DashMulG second DashS
+            | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+                exact mul (incDashMulG a1) (mul (incDashS a2) (y))
+            --base first from DashMulG second DashMulG
+            | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+                exact mul (incDashMulG a1) (mul (incDashMulG a2) (y))
+
+            --base first from S second DashS
+            | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+                exact mul (incS a1) (mul (incDashS a2) (y))
+            --base first from DashS second S
+            | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+                exact mul (incDashS a1) (mul (incS a2) (y))
+            --base first from S second DashMulG
+            | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+                exact mul (incS a1) (mul (incDashMulG a2) (y))
+            --base first from DashMulG second S
+            | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+                exact mul (incDashMulG a1) (mul (incS a2) (y))
+
+
+
+            --induct head from DashS tail from self
+            | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+                exact mul (incDashS head) (mul (incEMulDashH tail) (y))
+            --induct head from DashS tail from MulS
+            | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+                exact mul (incDashS head) (mul (incMulS tail) (y))
+            --induct head from DashMulG tail from self
+            | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+                exact mul (incDashMulG head) (mul (incEMulDashH tail) (y))
+            --induct head from DashMulG tail from MulS
+            | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+                exact mul (incDashMulG head) (mul (incMulS tail) (y))
+              --induct head from S tail from self
+            | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+                exact mul (incS head) (mul (incEMulDashH tail) (y))
+
+
+theorem mul.S_S {S:Type _}:∀ a b: S, mul (incS a) (incS b) =incMulS (MulS.base a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.S_MulS {S:Type _}:∀ a : S, ∀ A:MulS S, mul (incS a) (incMulS A) =incMulS (MulS.cons a A):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashS_DashS {S:Type _}:∀ a b:DashS S, mul (incDashS a) (incDashS b) = incEMulDashH (EMulDashH.base_DashS_DashS a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashS_DashMulG {S:Type _}:∀ a :DashS S, ∀ b:DashMulG S, mul (incDashS a) (incDashMulG b) = incEMulDashH (EMulDashH.base_DashS_DashMulG a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashMulG_DashS {S:Type _}:∀ a :DashMulG S, ∀ b:DashS S, mul (incDashMulG a) (incDashS b) = incEMulDashH (EMulDashH.base_DashMulG_DashS a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashMulG_DashMulG {S:Type _}:∀ a :DashMulG S, ∀ b:DashMulG S, mul (incDashMulG a) (incDashMulG b) = incEMulDashH (EMulDashH.base_DashMulG_DashMulG a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.S_DashS {S:Type _}:∀ a : S, ∀ b:DashS S, mul (incS a) (incDashS b) = incEMulDashH (EMulDashH.base_S_DashS a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashS_S {S:Type _}:∀ a : DashS S, ∀ b: S, mul (incDashS a) (incS b) = incEMulDashH (EMulDashH.base_DashS_S a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.S_DashMulG {S:Type _}:∀ a : S, ∀ b: DashMulG S, mul (incS a) (incDashMulG b) = incEMulDashH (EMulDashH.base_S_DashMulG a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashMulG_S {S:Type _}:∀ a : DashMulG S, ∀ b: S, mul (incDashMulG a) (incS b) = incEMulDashH (EMulDashH.base_DashMulG_S a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashS_self {S:Type _}:∀ a : DashS S, ∀ b: EMulDashH S, mul (incDashS a) (incEMulDashH b) = incEMulDashH (EMulDashH.cons_DashS_self a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashS_MulS {S:Type _}:∀ a : DashS S, ∀ b: MulS S, mul (incDashS a) (incMulS b) = incEMulDashH (EMulDashH.cons_DashS_MulS a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashMulG_self {S:Type _}:∀ a : DashMulG S, ∀ b: EMulDashH S, mul (incDashMulG a) (incEMulDashH b) = incEMulDashH (EMulDashH.cons_DashMulG_self a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.DashMulG_MulS {S:Type _}:∀ a : DashMulG S, ∀ b: MulS S, mul (incDashMulG a) (incMulS b) = incEMulDashH (EMulDashH.cons_DashMulG_MulS a b):= by
+    intro a b
+    rw[mul]
+
+theorem mul.S_self {S:Type _}:∀ a : S, ∀ b: EMulDashH S, mul (incS a) (incEMulDashH b) = incEMulDashH (EMulDashH.cons_S_self a b):= by
+    intro a b
+    rw[mul]
+
+
+
+
+
+theorem one_mul {S:Type _} : ∀ x:FDMon S, mul I x = x:= by
+    intro x
+    rw[mul]
+
+theorem mul_one {S:Type _} : ∀ x:FDMon S, mul x I = x:= by
+    intro x
+    match x with
+    | I =>
+        rw[mul]
+    | incS a =>
+        rw[mul]
+    | incMulS y =>
+        match y with
+        | MulS.base a b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+        | MulS.cons a A =>
+            rw[mul]
+            rw[mul_one]
+            rw[mul]
+
+
+    | incDashS y =>
+        rw[mul]
+    | incDashMulG y =>
+        rw[mul]
+    | incEMulDashH y =>
+        match y with
+            --base first from DashS second from DashS
+            | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+            --base first from DashS second DashMulG
+            | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --base first from DashMulG second DashS
+            | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --base first from DashMulG second DashMulG
+            | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+
+            --base first from S second DashS
+            | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --base first from DashS second S
+            | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --base first from S second DashMulG
+            | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --base first from DashMulG second S
+            | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+
+
+
+            --induct head from DashS tail from self
+            | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --induct head from DashS tail from MulS
+            | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --induct head from DashMulG tail from self
+            | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+            --induct head from DashMulG tail from MulS
+            | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+              --induct head from S tail from self
+            | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+                rw[mul]
+                rw[mul_one]
+                rw[mul]
+
+section trial
+variable {S:Type _} (x:FDMon S)
+example :∀ a:S, ∀ A:MulS S, ∀ B:MulS S, mul (incMulS (MulS.cons a A)) (incMulS B) = mul (incS a) (mul (incMulS A) (incMulS B)):=by
+  intro a A B
+  nth_rewrite 1 [mul]
+
+  rw[mul]
+  rw[← mul]
+end trial
+
+
+theorem mul_assoc {S:Type _} : ∀ x y z:FDMon S, mul x (mul y z) = mul (mul x y) z:= by
+    intro x y z
+
+    match x with
+    | I =>
+        rw[mul]
+        rw[mul]
+
+
+    | incS a =>
+        rw [mul]
+        rw[mul]
+
+        match y with
+        | I =>
+            rw[mul]
+            rw[mul]
+            --simp
+
+
+        | incS b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            --simp
+
+
+        | incMulS b =>
+            rw[mul]
+            rw[mul]
+
+        | incDashS b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+        | incDashMulG b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+        | incEMulDashH b =>
+            rw[mul]
+            rw[mul]
+
+
+
+
+
+    | incDashS a =>
+        rw[mul]
+        rw[mul]
+
+        match y with
+        | I =>
+            rw[mul]
+            rw[mul]
+
+        | incS b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+        | incMulS b =>
+            rw[mul]
+            rw[mul]
+
+
+
+
+        | incDashS b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+
+        | incDashMulG b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+
+        | incEMulDashH b =>
+            rw[mul]
+            rw[mul]
+
+
+    | incDashMulG a =>
+        rw[mul]
+        rw[mul]
+        match y with
+        | I =>
+            rw[mul]
+            rw[mul]
+
+        | incS b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+        | incMulS b =>
+            rw[mul]
+            rw[mul]
+
+
+
+
+        | incDashS b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+        | incDashMulG b =>
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+
+
+
+        | incEMulDashH b =>
+            rw[mul]
+            rw[mul]
+
+
+
+
+
+    | incMulS a =>
+
+        match a with
+        | MulS.base a1 a2 =>
+            rw[mul]
+            nth_rewrite 2 [mul_assoc]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[← mul]
+            rw[← mul] ---I dont know why is it like this
+            rw[mul_assoc]
+            -- have h1:mul (incMulS (MulS.base a1 a2)) y = mul (incS a1) (mul (incS a2) (y)):= by
+            --     rw[mul]
+            --     rw[mul]
+            --     rw[mul]
+            --     rw[← mul]
+            --     rw[← mul]
+
+            --rw[h1]
+
+
+        | MulS.cons a1 A =>
+            rw[mul]
+            nth_rewrite 2 [mul_assoc]
+            rw[mul]
+            rw[mul]
+            rw[mul]
+            rw[← mul]
+            rw[← mul] ---I dont know why is it like this
+            rw[mul_assoc]
+
+
+
+
+    | incEMulDashH a =>
+            match a with
+            --base first from DashS second from DashS
+            | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+            --base first from DashS second DashMulG
+            | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+            --base first from DashMulG second DashS
+            | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+            --base first from DashMulG second DashMulG
+            | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+
+            --base first from S second DashS
+            | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+            --base first from DashS second S
+            | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+            --base first from S second DashMulG
+            | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+            --base first from DashMulG second S
+            | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+
+
+
+            --induct head from DashS tail from self
+            | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+            --induct head from DashS tail from MulS
+            | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+            --induct head from DashMulG tail from self
+            | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+            --induct head from DashMulG tail from MulS
+            | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+              --induct head from S tail from self
+            | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+                rw[mul]
+                nth_rewrite 2 [mul_assoc]
+                rw[mul]
+                rw[mul]
+                rw[mul]
+                rw[← mul]
+                rw[← mul] ---I dont know why is it like this
+                rw[mul_assoc]
+
+
+theorem len_mul {S:Type _}: ∀ x y:FDMon S, len x + len y = len (mul x y):=by
+    intro x y
+    match x with
+    | I =>
+        rw[len]
+        simp
+        rw[mul]
+
+    | incS a =>
+        rw[len]
+        simp
+        match y with
+        | I =>
+            rw[len]
+            rw[mul]
+            rw[len]
+            simp
+        | incS b =>
+            rw[len]
+            rw[mul]
+            rw[len]
+            simp
+            rw[MulS.len]
+
+        | incDashS b =>
+            rw[len]
+            rw[mul]
+            rw[len]
+            simp
+            rw[EMulDashH.len]
+
+        | incDashMulG b =>
+            rw[len]
+            rw[mul]
+            rw[len]
+            simp
+            rw[EMulDashH.len]
+
+        | incMulS b =>
+            rw[len]
+            rw[mul]
+            rw[len]
+            simp
+            rw[MulS.len]
+
+        | incEMulDashH b =>
+            rw[len]
+            rw[mul]
+            rw[len]
+            simp
+            rw[EMulDashH.len]
+
+
+
+    | incDashS a =>
+        rw[len]
+        simp
+        rw[mul]
+        rw[len]
+        rw[len]
+        match y with
+        | I =>
+            simp
+
+        | incS b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incDashS b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incDashMulG b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incMulS b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incEMulDashH b =>
+            simp
+            rw[EMulDashH.len]
+
+
+
+    | incDashMulG a =>
+        rw[len]
+        simp
+        rw[mul]
+        rw[len]
+        rw[len]
+        match y with
+        | I =>
+            simp
+
+        | incS b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incDashS b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incDashMulG b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incMulS b =>
+            simp
+            rw[EMulDashH.len]
+
+        | incEMulDashH b =>
+            simp
+            rw[EMulDashH.len]
+
+    | incMulS a =>
+        rw[len]
+        simp
+        match a with
+        | MulS.base a1 a2 =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[MulS.len]
+            rw[← Nat.add_assoc]
+
+        | MulS.cons a1 A2 =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[MulS.len]
+            rw[← Nat.add_assoc]
+
+
+
+    | incEMulDashH a =>
+        rw[len]
+        simp
+        match a with
+        --base first from DashS second from DashS
+        | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+        --base first from DashS second DashMulG
+        | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+        --base first from DashMulG second DashS
+        | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+        --base first from DashMulG second DashMulG
+        | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+
+        --base first from S second DashS
+        | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+        --base first from DashS second S
+        | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+        --base first from S second DashMulG
+        | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+        --base first from DashMulG second S
+        | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+
+
+
+        --induct head from DashS tail from self
+        | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+        --induct head from DashS tail from MulS
+        | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+        --induct head from DashMulG tail from self
+        | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+        --induct head from DashMulG tail from MulS
+        | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+            --induct head from S tail from self
+        | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+            rw[mul]
+            rw[← len_mul]
+            rw[← len_mul]
+            nth_rewrite 2 [len]
+            simp
+            nth_rewrite 2 [len]
+            simp
+            rw[EMulDashH.len]
+            rw[← Nat.add_assoc]
+
+theorem mul_assoc.symm {S:Type _}:∀ x y z :FDMon S, mul (mul x y) z = mul x (mul y z):= by
+    intro x y z
+    exact (mul_assoc x y z).symm
+
+
+-- | I => sorry
+-- | incS b => sorry
+-- | incDashS b => sorry
+-- | incDashMulG b => sorry
+-- | incMulS b => sorry
+-- | incEMulDashH b => sorry
+
 
 end mul
+
+section FDMon_is_DMon
+
+instance stFDMon {S:Type _}: DMon (FDMon S ) where
+    one := I
+    mul := mul
+    dash := dash
+    mul_assoc := mul_assoc.symm
+    one_mul := one_mul
+    mul_one := mul_one
+    unit_dash := dash_unit
+
+end FDMon_is_DMon
+
+section HomDMon
+
+structure isHomDMon {M N:Type}[stM:DMon M][stN:DMon N](f:M→ N):Prop where
+    one : f (stM.one) = stN.one
+    mul : ∀ x y:M,  f (stM.mul x y) = stN.mul (f x)  (f y)
+    dash : ∀ x:M,   f (stM.dash x) = stN.dash (f x)
+
+end HomDMon
+
+
+
+section induceUnique
+
+variable {M S: Type _} [stM: DMon M]
+
+theorem induce_unique :(f g:FDMon S → M)→ (hf: isHomDMon f)→ (hg:isHomDMon g)→ (hyp: ∀ a:S, f (incS a) = g (incS a))→ ∀ x: FDMon S, (f x= g x) := by
+    intro f g hf hg hyp x
+    have h_one:@One.one (FDMon S) stFDMon.toOne = I:= by
+            rw[stFDMon]
+            simp
+    have h_dash:@DMon.dash (FDMon S) stFDMon = dash := by
+                    rw[stFDMon]
+                    simp
+    have h_mul:@Mul.mul (FDMon S) stFDMon.toMul   = mul := by
+                    rw[stFDMon]
+                    simp
+
+    --have h := stFDMon.mul
+
+    --ext x
+    match x with
+    | I =>
+
+        rw[← h_one]
+        rw[hf.one]
+        rw[stFDMon]
+        rw[hg.one]
+
+
+    | incS b =>
+        exact hyp b
+
+    | incDashS b =>
+        match b with
+        | DashS.base a k =>
+            match k with
+            | 0 =>
+
+                rw[← dash.incS]
+                rw[← h_dash]
+                rw[hf.dash]
+                rw[hg.dash]
+                rw[hyp]
+
+            | m+1=>
+                rw[← dash.incDashS]
+                rw[← h_dash]
+                rw[hf.dash]
+                rw[hg.dash]
+                rw[induce_unique f g hf hg hyp]
+
+    | incDashMulG b =>
+        match b with
+        | DashMulG.cons_MulS y k =>
+            match k with
+            | 0 =>
+                rw[← dash.incMulS]
+                rw[← h_dash]
+                rw[hf.dash]
+                rw[hg.dash]
+                rw[induce_unique f g hf hg hyp]
+
+            | k+1 =>
+                rw[← dash.incDashMulG.MulS]
+                rw[← h_dash]
+                rw[hf.dash]
+                rw[hg.dash]
+                rw[induce_unique f g hf hg hyp]
+
+
+        | DashMulG.cons_EMulDashH y k =>
+            match k with
+            | 0 =>
+                rw[← dash.incEMulDashH]
+                rw[← h_dash]
+                rw[hf.dash]
+                rw[hg.dash]
+                rw[induce_unique f g hf hg hyp]
+
+            | k+1 =>
+                rw[← dash.incDashMulG.EMulDashH]
+                rw[← h_dash]
+                rw[hf.dash]
+                rw[hg.dash]
+                rw[induce_unique f g hf hg hyp]
+
+--
+
+    | incMulS b =>
+        match b with
+        | MulS.base a1 a2 =>
+            rw[← mul.S_S]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[hyp]
+            rw[hyp]
+
+        | MulS.cons a1 A2 =>
+            rw[← mul.S_MulS]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[hyp]
+            rw[induce_unique f g hf hg hyp]
+
+    | incEMulDashH y =>
+        match y with
+        --base first from DashS second from DashS
+        | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+            rw[← mul.DashS_DashS]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --base first from DashS second DashMulG
+        | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+            rw[← mul.DashS_DashMulG]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --base first from DashMulG second DashS
+        | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+            rw[← mul.DashMulG_DashS]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --base first from DashMulG second DashMulG
+        | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+            rw[← mul.DashMulG_DashMulG]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --base first from S second DashS
+        | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+            rw[← mul.S_DashS]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --base first from DashS second S
+        | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+            rw[← mul.DashS_S]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --base first from S second DashMulG
+        | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+            rw[← mul.S_DashMulG]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --base first from DashMulG second S
+        | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+            rw[← mul.DashMulG_S]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+
+        --induct head from DashS tail from self
+        | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+            rw[← mul.DashS_self]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --induct head from DashS tail from MulS
+        | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+            rw[← mul.DashS_MulS]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --induct head from DashMulG tail from self
+        | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+            rw[← mul.DashMulG_self]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+        --induct head from DashMulG tail from MulS
+        | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+            rw[← mul.DashMulG_MulS]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+            --induct head from S tail from self
+        | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+            rw[← mul.S_self]
+            rw[← h_mul]
+            rw[hf.mul]
+            rw[hg.mul]
+            rw[induce_unique f g hf hg hyp]
+            rw[induce_unique f g hf hg hyp]
+
+
+
+end induceUnique
+
+section FDMon_is_FreeDMon
+
+structure FreeDMon {S M :Type _}[stM:DMon M](inc:S→ M):Prop where
+    exist :(N:Type _)→ (stN:DMon N) →  (∀ f:S→ N, ∃ f1:M→ N, isHomDMon f1 ∧ (f1∘ inc = f))
+    unique :(N:Type _)→ (stN:DMon N) → ( ∀ f g:M→ N, (isHomDMon f)→ (isHomDMon g) → (f∘ inc = g∘ inc) → (f =g))
+
+theorem FDMon_is_FreeDMon {S:Type _}:FreeDMon (incS:(S→ FDMon S)):= by
+    constructor
+    case exist=>
+        intro N stN f
+        use FDMon.induce f
+        constructor
+        case left=>
+            sorry
+        case right=>
+            ext a
+            simp only [Function.comp_apply]
+            rw[induce]
+
+    case unique=>
+        intro N stN f g hf hg hyp
+        ext x
+        apply induce_unique f g hf hg
+        intro a
+        have h:=@Function.comp_apply (FDMon S) N S f incS a
+        rw[← h]
+        rw[hyp]
+        simp only [Function.comp_apply]
+
+end FDMon_is_FreeDMon
+
+end FDMon
+
+
+        -- match y with
+        -- | I => exact x
+
+        -- | incS  (b: S) =>
+        --     match z with
+        --     --base first from DashS second from DashS
+        --     | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self (a1) (EMulDashH.base_DashS_S a2 b))
+        --     --base first from DashS second DashMulG
+        --     | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.base_DashMulG_S a2 b))
+        --     --base first from DashMulG second DashS
+        --     | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_DashS_S a2 b))
+        --     --base first from DashMulG second DashMulG
+        --     | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_DashMulG_S a2 b))
+
+        --     --base first from S second DashS
+        --     | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.base_DashS_S a2 b))
+        --     --base first from DashS second S
+        --     | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_MulS a1 (MulS.base a2 b))
+        --     --base first from S second DashMulG
+        --     | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.base_DashMulG_S a2 b))
+        --     --base first from DashMulG second S
+        --     | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_MulS a1 (MulS.base a2 b))
+
+
+
+        --     --induct head from DashS tail from self
+        --     | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+        --         exact mul (incDashS head) (mul (incEMulDashH tail) (incS b))
+        --     --induct head from DashS tail from MulS
+        --     | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+        --         exact mul (incDashS head) (mul (incMulS tail) (incS b))
+        --     --induct head from DashMulG tail from self
+        --     | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+        --         exact mul (incDashMulG head) (mul (incEMulDashH tail) (incS b))
+        --     --induct head from DashMulG tail from MulS
+        --     | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+        --         exact mul (incDashMulG head) (mul (incMulS tail) (incS b))
+        --       --induct head from S tail from self
+        --     | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+        --         exact mul (incS head) (mul (incEMulDashH tail) (incS b))
+
+        -- | incDashS (w: DashS S) =>
+        --     match z with
+        --     --base first from DashS second from DashS
+        --     | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self (a1) (EMulDashH.base_DashS_DashS a2 w))
+        --     --base first from DashS second DashMulG
+        --     | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.base_DashMulG_DashS a2 w))
+        --     --base first from DashMulG second DashS
+        --     | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_DashS_DashS a2 w))
+        --     --base first from DashMulG second DashMulG
+        --     | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_DashMulG_DashS a2 w))
+
+        --     --base first from S second DashS
+        --     | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.base_DashS_DashS a2 w))
+        --     --base first from DashS second S
+        --     | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.base_S_DashS a2 w))
+        --     --base first from S second DashMulG
+        --     | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.base_DashMulG_DashS a2 w))
+        --     --base first from DashMulG second S
+        --     | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_S_DashS a2 w))
+
+
+
+        --     --induct head from DashS tail from self
+        --     | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+        --         exact mul (incDashS head) (mul (incEMulDashH tail) (incDashS w))
+        --     --induct head from DashS tail from MulS
+        --     | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+        --         exact mul (incDashS head) (mul (incMulS tail) (incDashS w))
+        --     --induct head from DashMulG tail from self
+        --     | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+        --         exact mul (incDashMulG head) (mul (incEMulDashH tail) (incDashS w))
+        --     --induct head from DashMulG tail from MulS
+        --     | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+        --         exact mul (incDashMulG head) (mul (incMulS tail) (incDashS w))
+        --       --induct head from S tail from self
+        --     | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+        --         exact mul (incS head) (mul (incEMulDashH tail) (incDashS w))
+
+
+        -- | incDashMulG  (w: DashMulG S) =>
+        --     match z with
+        --     --base first from DashS second from DashS
+        --     | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self (a1) (EMulDashH.base_DashS_DashMulG a2 w))
+        --     --base first from DashS second DashMulG
+        --     | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.base_DashMulG_DashMulG a2 w))
+        --     --base first from DashMulG second DashS
+        --     | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_DashS_DashMulG a2 w))
+        --     --base first from DashMulG second DashMulG
+        --     | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_DashMulG_DashMulG a2 w))
+
+        --     --base first from S second DashS
+        --     | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.base_DashS_DashMulG a2 w))
+        --     --base first from DashS second S
+        --     | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.base_S_DashMulG a2 w))
+        --     --base first from S second DashMulG
+        --     | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.base_DashMulG_DashMulG a2 w))
+        --     --base first from DashMulG second S
+        --     | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.base_S_DashMulG a2 w))
+
+
+
+        --     --induct head from DashS tail from self
+        --     | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+        --         exact mul (incDashS head) (mul (incEMulDashH tail) (incDashMulG w))
+        --     --induct head from DashS tail from MulS
+        --     | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+        --         exact mul (incDashS head) (mul (incMulS tail) (incDashMulG w))
+        --     --induct head from DashMulG tail from self
+        --     | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+        --         exact mul (incDashMulG head) (mul (incEMulDashH tail) (incDashMulG w))
+        --     --induct head from DashMulG tail from MulS
+        --     | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+        --         exact mul (incDashMulG head) (mul (incMulS tail) (incDashMulG w))
+        --       --induct head from S tail from self
+        --     | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+        --         exact mul (incS head) (mul (incEMulDashH tail) (incDashMulG w))
+
+
+        -- | incMulS (w: MulS S) =>
+        --     match z with
+        --     --base first from DashS second from DashS
+        --     | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self (a1) (EMulDashH.cons_DashS_MulS a2 w))
+        --     --base first from DashS second DashMulG
+        --     | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.cons_DashMulG_MulS a2 w))
+        --     --base first from DashMulG second DashS
+        --     | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.cons_DashS_MulS a2 w))
+        --     --base first from DashMulG second DashMulG
+        --     | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.cons_DashMulG_MulS a2 w))
+
+        --     --base first from S second DashS
+        --     | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.cons_DashS_MulS a2 w))
+        --     --base first from DashS second S
+        --     | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_MulS a1 (MulS.cons a2 w))
+        --     --base first from S second DashMulG
+        --     | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.cons_DashMulG_MulS a2 w))
+        --     --base first from DashMulG second S
+        --     | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_MulS a1 (MulS.cons a2 w))
+
+
+
+        --     --induct head from DashS tail from self
+        --     | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+        --         exact mul (incDashS head) (mul (incEMulDashH tail) (incMulS w))
+        --     --induct head from DashS tail from MulS
+        --     | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+        --         exact mul (incDashS head) (mul (incMulS tail) (incMulS w))
+        --     --induct head from DashMulG tail from self
+        --     | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+        --         exact mul (incDashMulG head) (mul (incEMulDashH tail) (incMulS w))
+        --     --induct head from DashMulG tail from MulS
+        --     | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+        --         exact mul (incDashMulG head) (mul (incMulS tail) (incMulS w))
+        --       --induct head from S tail from self
+        --     | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+        --         exact mul (incS head) (mul (incEMulDashH tail) (incMulS w))
+
+
+        -- | incEMulDashH (w: EMulDashH S) =>
+        --     match z with
+        --     --base first from DashS second from DashS
+        --     | EMulDashH.base_DashS_DashS (a1: DashS S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self (a1) (EMulDashH.cons_DashS_self a2 w))
+        --     --base first from DashS second DashMulG
+        --     | EMulDashH.base_DashS_DashMulG  (a1: DashS S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.cons_DashMulG_self a2 w))
+        --     --base first from DashMulG second DashS
+        --     | EMulDashH.base_DashMulG_DashS (a1: DashMulG S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.cons_DashS_self a2 w))
+        --     --base first from DashMulG second DashMulG
+        --     | EMulDashH.base_DashMulG_DashMulG (a1: DashMulG S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.cons_DashMulG_self a2 w))
+
+        --     --base first from S second DashS
+        --     | EMulDashH.base_S_DashS (a1: S)  (a2: DashS S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.cons_DashS_self a2 w))
+        --     --base first from DashS second S
+        --     | EMulDashH.base_DashS_S  (a1: DashS S) (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashS_self a1 (EMulDashH.cons_S_self a2 w))
+        --     --base first from S second DashMulG
+        --     | EMulDashH.base_S_DashMulG  (a1: S)  (a2: DashMulG S) =>
+        --         exact incEMulDashH (EMulDashH.cons_S_self a1 (EMulDashH.cons_DashMulG_self a2 w))
+        --     --base first from DashMulG second S
+        --     | EMulDashH.base_DashMulG_S (a1: DashMulG S)  (a2: S) =>
+        --         exact incEMulDashH (EMulDashH.cons_DashMulG_self a1 (EMulDashH.cons_S_self a2 w))
+
+
+
+        --     --induct head from DashS tail from self
+        --     | EMulDashH.cons_DashS_self (head : DashS S )  (tail: EMulDashH S) =>
+        --         exact mul (incDashS head) (mul (incEMulDashH tail) (incEMulDashH w))
+        --     --induct head from DashS tail from MulS
+        --     | EMulDashH.cons_DashS_MulS  (head : DashS S )  (tail: MulS S)=>
+        --         exact mul (incDashS head) (mul (incMulS tail) (incEMulDashH w))
+        --     --induct head from DashMulG tail from self
+        --     | EMulDashH.cons_DashMulG_self (head : DashMulG S )  (tail: EMulDashH S)=>
+        --         exact mul (incDashMulG head) (mul (incEMulDashH tail) (incEMulDashH w))
+        --     --induct head from DashMulG tail from MulS
+        --     | EMulDashH.cons_DashMulG_MulS  (head : DashMulG S )  (tail: MulS S)=>
+        --         exact mul (incDashMulG head) (mul (incMulS tail) (incEMulDashH w))
+        --       --induct head from S tail from self
+        --     | EMulDashH.cons_S_self  (head : S )  (tail: EMulDashH S)=>
+        --         exact mul (incS head) (mul (incEMulDashH tail) (incEMulDashH w))
