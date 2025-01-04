@@ -83,7 +83,7 @@ section Dashes
 
 
 
---Taking dash of an element k times
+--Taking dash of an element k times is inductively defined
 def dash_k (k:Nat)(x:M):M:=by
   match k with
   | Nat.zero => exact x
@@ -173,13 +173,13 @@ noncomputable def fG {X:Set M} :Gen_dash X→ Gen_dash_st X:= by
     exact y
 
 
-example {X:Set M}: ∀ x:Gen_dash_st X, fG (fF x) = x :=by
-  rintro ⟨k, x ⟩
-  rw[fF]
-  simp
-  rw[fG]
-  simp
-  sorry
+-- example {X:Set M}: ∀ x:Gen_dash_st X, fG (fF x) = x :=by
+--   rintro ⟨k, x ⟩
+--   rw[fF]
+--   simp
+--   rw[fG]
+--   simp
+--   sorry
 
 --Composite elements of Gen_dash
 def GenP_dash (X:Set M):Set M:= by
@@ -826,7 +826,7 @@ example (p:M→ Prop)(h:ExistsUnique p):True:=by
   rcases h with ⟨_,_ ⟩
   sorry
 
-variable {M:Type _}[stM:DMon M]
+variable {M N:Type _}[stM:DMon M][stN:DMon N]
 
 noncomputable example {X:Set M}(Indp:is_Indp_dash X)(x:Gen_dash X):Nat:=by
   rcases x with ⟨x, prop  ⟩

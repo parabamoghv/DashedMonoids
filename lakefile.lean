@@ -15,8 +15,14 @@ require mathlib from git
 lean_lib «Symm» where
   -- add any library configuration options here
 
-@[default_target]
+--@[default_target]
 lean_lib «DashedMonoids» where
 
 lean_lib DashedMonoids.Basic
 lean_lib DashedMonoids.Interval
+
+@[default_target]
+lean_lib «FreeDMon» where
+
+lean_lib FreeDMon.Basic
+lean_lib FreeDMon.TypeC
