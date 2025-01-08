@@ -274,26 +274,26 @@ def le_set (n:Nat) :Set X:= {x| Len x< n}
 
 def eq_set (n:Nat) : Set X:={x| Len x = n}
 
-structure Slice (Len: X→ Nat) (n:Nat) where
+structure Slice_ (Len: X→ Nat) (n:Nat) where
   val:X
   eq: Len val = n
 
-def EqSlice {Len:X→ Nat} {n m:Nat} (x :Slice Len n)(y:Slice  Len m):Prop :=@EqGrade (fun n=> Slice Len n) n m x y
+def EqSlice {Len:X→ Nat} {n m:Nat} (x :Slice_ Len n)(y:Slice_  Len m):Prop :=@EqGrade (fun n=> Slice_ Len n) n m x y
 
 @[simp]
-theorem EqSlice_rfl {Len:X→ Nat}{n :Nat}(P:Slice Len n):EqSlice P P:=by
+theorem EqSlice_rfl {Len:X→ Nat}{n :Nat}(P:Slice_ Len n):EqSlice P P:=by
   rw[EqSlice]
   exact EqGrade.rfl n P
 
 @[simp]
-theorem EqSlice_symm {Len:X→ Nat}{n m:Nat}(P:Slice Len n)(Q:Slice Len m):EqSlice P Q ↔ EqSlice Q P:=by
+theorem EqSlice_symm {Len:X→ Nat}{n m:Nat}(P:Slice_ Len n)(Q:Slice_ Len m):EqSlice P Q ↔ EqSlice Q P:=by
 
   --rw[EqSlice]
   --rw[EqSlice]
   exact EqGrade_symm n m P Q
 
 @[simp]
-theorem EqSlice_trans {Len:X→ Nat}{n m p:Nat}(P:Slice Len n)(Q: Slice Len m)(R:Slice Len p):EqSlice P Q→ EqSlice Q R→ EqSlice P R:=by
+theorem EqSlice_trans {Len:X→ Nat}{n m p:Nat}(P:Slice_ Len n)(Q: Slice_ Len m)(R:Slice_ Len p):EqSlice P Q→ EqSlice Q R→ EqSlice P R:=by
   exact EqGrade_trans n m p P Q R
 
 
@@ -310,13 +310,13 @@ def eq_fun (u:X → Y)(n:Nat):@eq_set X Len n → Y:=by
   rintro ⟨x, _ ⟩
   exact u x
 
-def FunSlice (Len:X→ Nat)(n:Nat)(u:X→ Y):(Slice Len n) → Y :=by
+def FunSlice (Len:X→ Nat)(n:Nat)(u:X→ Y):(Slice_ Len n) → Y :=by
   intro ⟨x, _ ⟩
   exact u x
 
-def EqFunSlice {Len:X→ Nat}{n m:Nat}(f :Slice Len n → Y)(g:Slice Len m→ Y):Prop := EqFun n m  f g
+def EqFunSlice {Len:X→ Nat}{n m:Nat}(f :Slice_ Len n → Y)(g:Slice_ Len m→ Y):Prop := EqFun n m  f g
 
-theorem EqFunSlice_ext {Len:X→ Nat}{n m:Nat}(f :Slice Len n → Y)(g:Slice Len m→ Y):(n=m)→ (∀ x:Slice Len n,∀  y:Slice Len m, EqGrade n m x y→ @EqGrade (fun n:Nat=> (Y:Type u)) n m (f x) (g y))→ EqFun n m f g:=by
+theorem EqFunSlice_ext {Len:X→ Nat}{n m:Nat}(f :Slice_ Len n → Y)(g:Slice_ Len m→ Y):(n=m)→ (∀ x:Slice_ Len n,∀  y:Slice_ Len m, EqGrade n m x y→ @EqGrade (fun n:Nat=> (Y:Type u)) n m (f x) (g y))→ EqFun n m f g:=by
   intro eqnm h
   rw[EqFun]
   induction' eqnm with h
@@ -325,11 +325,9 @@ theorem EqFunSlice_ext {Len:X→ Nat}{n m:Nat}(f :Slice Len n → Y)(g:Slice Len
   simp
   ext x
   specialize h x x (EqGrade.rfl n x)
-  induction' h with
-
 
   sorry
-  exact rfl
+  rfl
 
 theorem EqFunSlice_if (Len:X→ Nat)(n m:Nat)(u v:X→ Y):(n=m)→ (u=v)→ EqFun n m (FunSlice Len n u) (FunSlice Len m v):=by
   intro eqnm equv
@@ -338,25 +336,26 @@ theorem EqFunSlice_if (Len:X→ Nat)(n m:Nat)(u v:X→ Y):(n=m)→ (u=v)→ EqFu
   rw[equv]
   apply EqFun_rfl
 
-theorem st_eq (Len:X→ Nat)(st:(n:Nat)→ (Slice Len n→ Y))(n m:Nat)(x:Slice Len n)(y:Slice Len m):(n=m)→ (EqSlice x y)→  (EqFun n m (st n) (st m))→ (@EqFun (fun n=> Y) n m (st n x) (st m y)):=by
-  intro eqnm eqxy
+-- theorem st_eq (Len:X→ Nat)(st:(n:Nat)→ (Slice_ Len n→ Y))(n m:Nat)(x:Slice_ Len n)(y:Slice_ Len m):(n=m)→ (EqSlice x y)→  (EqFun n m (st n) (st m))→ (@EqFun (fun n=> Y) n m (st n x) (st m y)):=by
+--   intro eqnm eqxy
 
-  sorry
+--   sorry
 
 
-def Build (Len:X→ Nat)(st:(n:Nat)→ (Slice Len n→ Y)):X→ Y:=by
+def Build (Len:X→ Nat)(st:(n:Nat)→ (Slice_ Len n→ Y)):X→ Y:=by
   intro x
   exact st (Len x) ⟨x, rfl ⟩
 
-theorem Build_n (Len:X→ Nat)(st:(m:Nat)→ (Slice Len m→ Y))(n:Nat):EqFun n n  (FunSlice Len n (Build Len st))  (st n):=by
+theorem Build_n (Len:X→ Nat)(st:(m:Nat)→ (Slice_ Len m→ Y))(n:Nat):EqFun n n  (FunSlice Len n (Build Len st))  (st n):=by
   rw[EqFun]
 
   apply EqFunSlice_ext
+  simp
   intro x y eqxy
   rw[FunSlice]
   simp
   rw[Build]
-  induction' eqxy
+
 
   sorry
 
@@ -401,15 +400,17 @@ def Induct : X→ Y:=by
 theorem hhh (x:X)(hx:Len x =0):@Induct X Y Len bc ih x = @Induct_help X Y Len bc ih (0)  ⟨x,hx ⟩:=by
   rw[Induct]
   rw[Induct_help]
-  induction hx
-  rw[hx]
   sorry
+  -- induction hx
+  -- rw[hx]
+  -- sorry
 
 theorem Induct0 (x:X)(hx:Len x =0): (@Induct X Y Len bc ih) x = bc ⟨x, hx ⟩ :=by
   rw[Induct]
-  induction hx
-  rw  [ hx]
   sorry
+  -- induction hx
+  -- rw  [ hx]
+  -- sorry
 
 end UsualInduction
 

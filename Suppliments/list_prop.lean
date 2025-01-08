@@ -194,7 +194,6 @@ theorem strong_induction {P : Nat → Prop} (n:Nat) (h : ∀ (m:Nat), (∀ k < m
 
   sorry
 
-def ddd: Nat→ M:=by sorry
 
 
 def le_elements (L:M→ Nat) (n:Nat):Set M := {x:M| L x<n}

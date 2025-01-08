@@ -24,5 +24,11 @@ lean_lib DashedMonoids.Interval
 @[default_target]
 lean_lib «FreeDMon» where
 
-lean_lib FreeDMon.Basic
-lean_lib FreeDMon.TypeC
+lean_lib FreeDMon.as_inudctive
+lean_lib FreeDMon.TypeC_inductive
+lean_lib FreeDMon.list_prop
+
+lean_lib «Suppliments» where
+
+lean_lib Suppliments.list_prop
+lean_lib Suppliments.Interval

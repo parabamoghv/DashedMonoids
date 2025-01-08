@@ -1,7 +1,7 @@
 import Mathlib
-import DashedMonoids.ListProp
-import DashedMonoids.StrongInduction
-import FreeDMon.Basic
+--import DashedMonoids.ListProp
+--import DashedMonoids.StrongInduction
+import FreeDMon.as_inductive
 --open Finset
 set_option autoImplicit false
 set_option maxHeartbeats 0

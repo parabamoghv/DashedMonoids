@@ -1,1 +1,1 @@
-Readme
+This project is about formalizing parts of my thesis 

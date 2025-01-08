@@ -1,6 +1,6 @@
 import Mathlib
-import DashedMonoids.ListProp
-import DashedMonoids.StrongInduction
+import Suppliments.list_prop
+--import DashedMonoids.StrongInduction
 --open Finset
 set_option autoImplicit false
 set_option maxHeartbeats 0
@@ -19,7 +19,7 @@ set_option maxHeartbeats 0
 #check Classical.choose_spec
 
 --universe u v w
-#check List.ListTwoOrMore_neq_ListOne
+--#check List.ListTwoOrMore_neq_ListOne
 
 
 --variable {S: Type _}
@@ -165,7 +165,7 @@ noncomputable def fG {X:Set M} :Gen_dash X→ Gen_dash_st X:= by
   have k:=Classical.choose hx
   have hk:= Classical.choose_spec hx
   have y:= Classical.choose hk
-  have hy:= Classical.choose_spec hk
+  --have hy:= Classical.choose_spec hk
   constructor
   case k=>
     exact k
@@ -771,14 +771,14 @@ noncomputable def u_Sinf: Gen_dash FDL.basis → N:=by
 
 --variable (v: Nat.StrongInduction N M)
 
-def SI:Nat.StrongInduction FDL.mul_basis N:=  by
-  constructor
-  case Len=>
-    rintro ⟨x, hx ⟩
-    sorry
-  case Induct=>
-    rintro m
-    sorry
+-- def SI:Nat.StrongInduction FDL.mul_basis N:=  by
+--   constructor
+--   case Len=>
+--     rintro ⟨x, hx ⟩
+--     sorry
+--   case Induct=>
+--     rintro m
+--     sorry
 
 def uG: (n:Nat)→(x:M)→ (x∈ FDL.mul_basis)→ (FDL.length x=n)→ N:=by
   intro n
@@ -800,15 +800,15 @@ def u_GG: (x:FDL.mul_basis)→ N:=by
 
 #check Nat.strong_induction_on
 
-noncomputable def u_G1: (n:Nat)→(x:M)→ (hxG:x∈ FDL.mul_basis)→ (FDL.length x=n)→ (∃z: N, True):=by
-  intro n
-  apply Nat.case_strong_induction_on n
-  case hz=>
-    intro x hxG hxn
-    use 1 --need to change this
-  case hi=>
-    intro n hn x hxG hxn
-    sorry
+-- noncomputable def u_G1: (n:Nat)→(x:M)→ (hxG:x∈ FDL.mul_basis)→ (FDL.length x=n)→ (∃z: N, True):=by
+--   intro n
+--   apply Nat.case_strong_induction_on n
+--   case hz=>
+--     intro x hxG hxn
+--     use 1 --need to change this
+--   case hi=>
+--     intro n hn x hxG hxn
+--     sorry
 
 
 
@@ -822,9 +822,6 @@ end FreeDMon_like
 #check exists_unique_eq
 #check ExistsUnique
 
-example (p:M→ Prop)(h:ExistsUnique p):True:=by
-  rcases h with ⟨_,_ ⟩
-  sorry
 
 variable {M N:Type _}[stM:DMon M][stN:DMon N]
 

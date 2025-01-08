@@ -18,8 +18,8 @@ Second, we can define the free dashed monoid as a mutual inductive type. This ap
 
 
 import Mathlib
-import DashedMonoids.ListProp
-import DashedMonoids.StrongInduction
+--import DashedMonoids.ListProp
+--import DashedMonoids.StrongInduction
 --open Finset
 set_option autoImplicit false
 set_option maxHeartbeats 0
