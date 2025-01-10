@@ -34,13 +34,12 @@ Dashed lists maintain the associative concatenation property and introduce a das
 
 The second part of this project delves into categorical algebra. Specifically, it involves:
 
-    Defining semi-strict categorical groups and strict categorical groups in Lean4.
-    Proving their categorical equivalence.
+Defining semi-strict categorical groups and strict categorical groups in Lean4 and proving their categorical equivalence.
 
 This work extends foundational concepts in category theory and provides a formal framework that connects theoretical results to computational verification.
 Why This Matters
 
-Formalizing mathematics ensures that proofs and constructions are rigorous, eliminating human errors in reasoning. This is particularly important in highly abstract fields like category theory, where intuition alone is often insufficient. By contributing to the formalization of advanced mathematical concepts, this project bridges the gap between abstract theory and computational implementation.
+Formalizing mathematics ensures that proofs and constructions are rigorous, eliminating human errors in reasoning. This is particularly important in highly abstract fields like category theory, where intuition alone is often insufficient. By contributing to the formalization of advanced mathematical concepts, this project bridges the gap between abstract theory and computational implementation. You can find the related code in stCatGrp directory.
 
 
 
@@ -53,40 +52,35 @@ If you’re familiar with languages like Python, Java, or C++, Lean might feel d
 1. It’s rooted in Type Theory, not object-oriented or imperative paradigms. In Lean, a type can represent a mathematical proposition, and its elements are proofs of that proposition. 
 2. The focus is on correctness and proof rather than just running code. Writing a function in Lean often corresponds to proving something.
 
-Here’s a quick guide to understanding Lean for someone familiar with other programming languages:
-What is Lean?
-
-Lean is a dependently-typed programming language and proof assistant. It’s designed for writing mathematical proofs and formally verifying them with the help of type theory. Think of it as a tool where programming meets logic and mathematics.
-
-If you’re familiar with languages like Python, Java, or C++, Lean might feel different because:
-
-    It’s rooted in Type Theory, not object-oriented or imperative paradigms.
-    The focus is on correctness and proof rather than just running code.
-
-Core Concepts
-1. Type Theory
-
-Lean is based on a type system that ensures everything is consistent:
-
-    Types as Propositions: In Lean, a type can represent a mathematical proposition, and its elements are proofs of that proposition.
-    Functions as Proofs: Writing a function in Lean often corresponds to proving something.
-
-Example:
-
-theorem example : 1 + 1 = 2 :=
-rfl  -- "rfl" means "reflexivity," i.e., this is true by definition.
-
-Here:
-
-    theorem example declares a theorem named example.
-    1 + 1 = 2 is the proposition.
-    rfl is the proof.
 
 ### Reading Lean Code
 
 Lean code has a declarative style, often involving theorems, definitions, and tactics:
 
-    *Definitions* (def): Define functions or values, like in most programming languages.
-    *Theorems/Propositions* (theorem or lemma): Statements you want to prove.
-    *Tactics* : Step-by-step tools to guide Lean in constructing a proof.
+*Definitions* (def): Define functions or values, like in most programming languages.
+*Theorems/Propositions* (theorem or lemma): Statements you want to prove.
+*Tactics* : Step-by-step tools to guide Lean in constructing a proof.
 
+
+### Example 
+
+The main result we want to prove is as follows: The dashed lists that we constructed is indeed the data structure we wish to create. *FDMon S* is the name given to dashed lists and the properties that we want it to satisfy are stored at FreeDMon. Thus, we have following theorem.
+
+    theorem FDMon_is_FreeDMon {S:Type _}:FreeDMon (incS:(S→ FDMon S)):= by
+    constructor
+    case exist=>
+        intro N stN f
+        use FDMon.induce f
+        ---
+
+    case unique=>
+        intro N stN f g hf hg hyp
+        ext x
+        apply induce_unique f g hf hg
+        intro a
+        rw[← @Function.comp_apply (FDMon S) N S f incS a]
+        rw[hyp]
+        simp only [Function.comp_apply]
+
+
+In above, everything after `by` is the proof of the theorem. `Constructor` divides the proof into two cases: Exists and Unique. We use tactics given to us and developed over the course to prove these cases. If Lean does not give any error message then it means that the proof is correct.
