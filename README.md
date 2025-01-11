@@ -30,6 +30,9 @@ Examples of dashed lists:
 
 Dashed lists maintain the associative concatenation property and introduce a dash operation. In this project, we provide a formal construction of dashed lists in Lean4, showcasing their structure and properties. More explanation on this and the codes related to this are in Dashed_Lists directory.
 
+We define dashed lists as inductive type with five constructors. The first constructor is the empty list. The second constructor is the inclusion of an element of the underlying set S. The third constructor is the inclusion of a dashed elements of S. The fourth constructor is the inclusion of a dashed multiplication. The fifth constructor is the inclusion of a multiplication. This construction satisfies the properties that we want.
+
+
 2. ### Formalizing Semi-Strict and Strict Categorical Groups
 
 The second part of this project delves into categorical algebra. Specifically, it involves:
