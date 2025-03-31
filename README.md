@@ -14,7 +14,7 @@ Contact me at _parab.7@osu.edu_ if you have any questions or comments.
 
 ## Project Overview
 
-1. ### Constructing a Framework for Dashed Lists
+1. ### Designing a New Inductive Data Type : Dashed Monoids
 
 The first part of this project is motivated by the familiar construction of the data structure List S, where the elements are derived from a set S. Lists are a cornerstone of computer science, valued for their simplicity and flexibility. One of their key properties is associative concatenation:
 (L1+L2)+L3=L1+(L2+L3)
