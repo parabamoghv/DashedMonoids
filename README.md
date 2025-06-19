@@ -26,9 +26,11 @@ Dashed lists preserve associative concatenation and introduce a dash operation. 
 3. Inclusion of multiplication of two or more elements from `S`
 4. Inclusion of dashing of an element from `S`
 5. Inclusion of dashing of elements from constructors 3 and 6 
-6. Inclusion of multiplication of two or more elements from constructors 4 and 5 
+6. Inclusion of multiplication of two or more elements from constructors 4 and 5
+
 
 You can find the formal construction in `Dashed_Lists\as_inductive.lean`. This file begins with an introduction to the algebraic structure of dashed monoids and provides several examples. In the section `FDMon.Definition`, we formally define Dashed Lists with the name `FDMon`. Section `FDMon_is_FreeDMon` demonstrates that this construction satisfies the desired universal property. For the underlying mathematics, refer to `DashedMonoids.pdf`. The use of five constructors for dashed lists is inspired by the definition of the dashed monoid basis (Definition 3.2.6); the mathematical development in the document and the Lean code closely correspond.
+
 ---
 
 See [Appendix A](#appendix-a-what-is-lean4) for a quick introduction to Lean4.
