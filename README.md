@@ -1,48 +1,49 @@
-# Formalizing Parts of My Thesis in Lean4
+# Dashed Monoids and Categorical Groups Formalization in Lean4
 
-## Introduction
+Welcome! This repository contains a Lean4 formalization of concepts from my thesis on the Symmetrization of Categorical Groups, focusing on the categorical analogue of group abelianization. The project is designed to be accessible to both mathematicians and computer scientists interested in formal methods.
 
-Mathematics is fundamentally about developing methods or algorithms to solve problems. But how can we be sure that these methods are foolproof? Wouldn't it be amazing if a computer could understand mathematical concepts and validate our solutions?
-
-Lean4 is a programming language designed for formalizing mathematics, providing a robust environment to verify mathematical proofs and algorithms. It has an active community that contributes to an ever-growing mathematical library, making it a valuable tool for mathematicians and computer scientists. Have a look at Appendix A for a quick guide to Lean4.
-
-This project aims to formalize parts of my thesis on the Symmetrization of Categorical Groups, which is the categorical equivalent of the Abelianization of a Group. While the thesis itself is highly technical, the aspects I wish to formalize are accessible and potentially interesting to both mathematics and computer science enthusiasts.
-
-Contact me at _parab.7@osu.edu_ if you have any questions or comments.
+For questions or feedback, feel free to reach out at _parab.7@osu.edu_.
 
 ---
 
 ## Project Overview
 
-1. ### Designing a New Inductive Data Type : Dashed Monoids
+### 1. Dashed Monoids: A New Algebraic Structure
 
-The first part of this project is motivated by the familiar construction of the data structure List S, where the elements are derived from a set S. Lists are a cornerstone of computer science, valued for their simplicity and flexibility. One of their key properties is associative concatenation:
-(L1+L2)+L3=L1+(L2+L3)
-(L1​+L2​)+L3​=L1​+(L2​+L3​)
+This project introduces **dashed monoids** (`DMon S`), a generalization of free monoids (lists) over a set `S`. While standard lists are widely used in computer science for their associative concatenation property, dashed monoids extend this idea by allowing elements to have multiple levels of "dashing" (nesting).
 
-Here, we introduce a new data structure, denoted as DMon S (inspired by the term "free dashed monoid"). Elements of DMon S, called dashed lists, are nested lists where elements may have 0 or more dashes applied to them. Regular lists are a special case of dashed lists, with no dashes applied.
+**Examples of dashed lists:**
+```
+(a, ((b, c)', d'')')
+(a', b'', c)''
+(a, b, c, d)    -- a plain list without dashes
+```
+Regular lists are simply dashed lists with no dashes.
 
-Examples of dashed lists:
+Dashed lists preserve associative concatenation and introduce a dash operation. The Lean4 formalization defines dashed lists as an inductive type with five constructors:
+1. Empty list
+2. Inclusion of an element from `S`
+3. Inclusion of multiplication of two or more elements from `S`
+4. Inclusion of dashing of an element from `S`
+5. Inclusion of dashing of elements from constructors 3 and 6 
+6. Inclusion of multiplication of two or more elements from constructors 4 and 5 
 
-    [a, ((b, c)', d'')']
-    [a', b'', c]
-    [a, b, c, d] (a plain list without dashes)
+You can find the formal construction in `Dashed_Lists\as_inductive.lean`. This file begins with an introduction to the algebraic structure of dashed monoids and provides several examples. In the section `FDMon.Definition`, we formally define Dashed Lists with the name `FDMon`. Section `FDMon_is_FreeDMon` demonstrates that this construction satisfies the desired universal property. For the underlying mathematics, refer to `DashedMonoids.pdf`. The use of five constructors for dashed lists is inspired by the definition of the dashed monoid basis (Definition 3.2.6); the mathematical development in the document and the Lean code closely correspond.
+---
 
-Dashed lists maintain the associative concatenation property and introduce a dash operation. In this project, we provide a formal construction of dashed lists in Lean4, showcasing their structure and properties. More explanation on this and the codes related to this are in Dashed_Lists directory.
-
-We define dashed lists as inductive type with five constructors. The first constructor is the empty list. The second constructor is the inclusion of an element of the underlying set S. The third constructor is the inclusion of a dashed elements of S. The fourth constructor is the inclusion of a dashed multiplication. The fifth constructor is the inclusion of a multiplication. This construction satisfies the required universal property.
+See [Appendix A](#appendix-a-what-is-lean4) for a quick introduction to Lean4.
 
 
 2. ### Formalizing Semi-Strict and Strict Categorical Groups
 
 The second part of this project delves into categorical algebra. Specifically, it involves:
 
-Defining semi-strict categorical groups and strict categorical groups in Lean4 and proving their categorical equivalence.
+Defining semi-strict categorical groups and strict categorical groups in Lean4 and proving their categorical equivalence. This is a work in progress, more details will follow.
 
-This work extends foundational concepts in category theory and provides a formal framework that connects theoretical results to computational verification.
-Why This Matters
+<!-- This work extends foundational concepts in category theory and provides a formal framework that connects theoretical results to computational verification.
+Why This Matters -->
 
-Formalizing mathematics ensures that proofs and constructions are rigorous, eliminating human errors in reasoning. This is particularly important in highly abstract fields like category theory, where intuition alone is often insufficient. By contributing to the formalization of advanced mathematical concepts, this project bridges the gap between abstract theory and computational implementation. You can find the related code in stCatGrp directory.
+<!-- Formalizing mathematics ensures that proofs and constructions are rigorous, eliminating human errors in reasoning. This is particularly important in highly abstract fields like category theory, where intuition alone is often insufficient. By contributing to the formalization of advanced mathematical concepts, this project bridges the gap between abstract theory and computational implementation. You can find the related code in stCatGrp directory. -->
 
 
 
@@ -52,7 +53,7 @@ Lean is a *dependent-typed programming language and proof assistant*. It’s des
 
 If you’re familiar with languages like Python, Java, or C++, Lean might feel different because:
 
-1. It’s rooted in Type Theory, not object-oriented or imperative paradigms. In Lean, a type can represent a mathematical proposition, and its elements are proofs of that proposition. 
+1. It’s rooted in Type Theory, not object-oriented. In Lean, a type can represent a mathematical proposition, and its elements are proofs of that proposition. 
 2. The focus is on correctness and proof rather than just running code. Writing a function in Lean often corresponds to proving something.
 
 
