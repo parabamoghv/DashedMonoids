@@ -1,37 +1,158 @@
-# Dashed Monoids and Categorical Groups Formalization in Lean4
+# # Dashed Monoids and Categorical Groups  
+### A Lean4 Formalization
 
-Welcome! This repository contains a Lean4 formalization of concepts from my thesis on the Symmetrization of Categorical Groups, focusing on the categorical analogue of group abelianization. The project is designed to be accessible to both mathematicians and computer scientists interested in formal methods.
+Welcome!!
+This repository contains a Lean4 formalization of concepts from my PhD thesis on the Symmetrization of Categorical Groups, focusing on the categorical analogue of group abelianization.
 
-For questions or feedback, feel free to reach out at _parab.7@osu.edu_.
+The project is written to be accessible to both mathematicians and computer scientists, especially those interested in rewriting systems, algebraic structures, and formal verification.
+
+For questions or feedback, feel free to reach out at parab.7@osu.edu.
 
 ---
 
 ## Project Overview
 
-### 1. Dashed Monoids: A New Algebraic Structure
+### A Game of Words, Parentheses, and Cancellation
 
-This project introduces **dashed monoids** (`DMon S`), a generalization of free monoids (lists) over a set `S`. While standard lists are widely used in computer science for their associative concatenation property, dashed monoids extend this idea by allowing elements to have multiple levels of "dashing" (nesting).
+Think of the following as a small rewriting game.
 
-**Examples of dashed lists:**
-```
-(a, ((b, c)', d'')')
-(a', b'', c)''
-(a, b, c, d)    -- a plain list without dashes
-```
-Regular lists are simply dashed lists with no dashes.
+You start with a fully parenthesized word, for example:
 
-Dashed lists preserve associative concatenation and introduce a dash operation. The Lean4 formalization defines dashed lists as an inductive type with five constructors:
-1. Empty list
-2. Inclusion of an element from `S`
-3. Inclusion of multiplication of two or more elements from `S`
-4. Inclusion of dashing of an element from `S`
-5. Inclusion of dashing of elements from constructors 3 and 6 
-6. Inclusion of multiplication of two or more elements from constructors 4 and 5
+    B(A((N A)(N A)))
 
-
-You can find the formal construction in `Dashed_Lists\as_inductive.lean`. This file begins with an introduction to the algebraic structure of dashed monoids and provides several examples. In the section `FDMon.Definition`, we formally define Dashed Lists with the name `FDMon`. Section `FDMon_is_FreeDMon` demonstrates that this construction satisfies the desired universal property. For the underlying mathematics, refer to `DashedMonoids.pdf`. The use of five constructors for dashed lists is inspired by the definition of the dashed monoid basis (Definition 3.2.6); the mathematical development in the document and the Lean code closely correspond.
+You are allowed to perform the following rewrite moves. 
 
 ---
+
+### Associativity: Re-bracketing the Word
+
+You may reassociate parentheses using the rule:
+
+    (XY)Z   ↔   X(YZ)
+
+where X, Y, Z can be:
+- a single letter, or
+- a fully parenthesized subexpression.
+
+#### Examples
+
+    ((B A) N) (A (N A))   ↔   (B (A N)) (A (N A))
+    ((B A) N) (A (N A))   ↔   (B A) (N (A (N A)))
+    ((B A) N) (A (N A))   ↔   ((B A) N) ((A N) A)
+
+The goal is to understand when two words are reachable via a sequence of re-write moves. In the setting of monoidal categories (the moves are labled and satisfy coherence axioms); are any two composition of sequences between two words equal?
+
+A classical result of Mac Lane shows that as long as the underlying word is the same (for example BANANA), any bracketing can be transformed into any other. In the setting of monoidal categories, any two such transformation sequences are equal: a coherence theorem.
+
+---
+
+### Enter Categorical Groups: Adding Dashes
+
+In categorical groups, we play the same game; but now letters and parenthesized blocks may carry dashes, representing formal inverses:
+
+    B''(A((N A)'(N A)))
+
+In addition to reassociating parentheses, we now allow cancellation.
+
+---
+
+### Cancellation Rules
+
+For any expression X (a letter or a fully parenthesized block), we may cancel:
+
+    X' X   ↔   ∅
+    X X'   ↔   ∅
+
+where ∅ denotes the empty word.
+
+These rules encode group-like behavior inside the rewriting system.
+
+---
+
+### The Core Questions
+
+With associativity and cancellation in place, we ask:
+
+1. Reachability  
+   When can one dashed word be transformed into another using the rules?
+
+2. Coherence  
+   In the contex of categorical groups (the moves have labels and satisfy the coherence axioms) whether the multiple valid rewrite sequences between two words equal?
+
+#### Examples
+
+    B''(A((N A)'(N A)))  →  B''A
+    B'' A                →  B'' ((B' B) A)
+    B'' ((B' B) A)       →  (B'' (B' B)) A
+    (B'' (B' B)) A       →  ((B'' B') B) A
+    ((B'' B') B) A       →  B A 
+    
+    
+
+In my thesis, I give a precise criterion characterizing when one dashed word can be transformed into another. Moreover, within the axioms of categorical groups, I prove a coherence theorem: any two valid rewrite sequences are equal.
+
+---
+
+## Dashed Monoids (DMon S)
+
+I construct the free dashed monoids (monoids with a unary operation) to model the above game. The free dashed monoid is precisely the set of all possible dashed words with using the given set of letters. The multiplication is given by concatation and the unary operation is simply adding an outer dash. To do any meaningful mathematics with this construction, we need to show that the free dashed monoids satisfy the appropriate universal property. In my thesis, I give the precise recipe to achieve this and I also provide the formal proof of universal property in Lean4.
+
+---
+
+## Formal Structure in Lean4
+
+Dashed words generated by a given set of letters (S) are defined as an inductive type in Lean4.  
+The construction preserves associativity while introducing a dash operation compatible with cancellation.
+
+The definition uses the following constructors:
+
+1. Empty list  
+2. Inclusion of an element from S  
+3. Multiplication of two or more elements from S  
+4. Dashing of an element from S  
+5. Dashing of composite expressions  
+6. Multiplication of dashed expressions  
+
+This design mirrors the dashed monoid basis from the mathematical development and allows precise control over rewriting and equivalence.
+
+---
+
+## Code Structure
+
+- Dashed_Lists/as_inductive.lean  
+  Introduces the algebraic structure of dashed monoids and provides illustrative examples.
+
+- FDMon.Definition  
+  Defines dashed lists formally as FDMon.
+
+- FDMon_is_FreeDMon  
+  Proves that this construction satisfies the universal property of a free dashed monoid.
+
+- DashedMonoids.pdf  
+  Contains the underlying mathematical development.  
+  The Lean code closely follows Definition 3.2.6 and related results.
+
+---
+
+## Status
+
+- Core inductive structure formalized  
+- Universal property proved in Lean  
+- Equivalence criterion formalized  
+- Full coherence proof in progress  
+
+---
+
+## Why This Matters
+
+This project sits at the intersection of:
+
+- algebraic rewriting systems  
+- categorical coherence  
+- formal verification with proof assistants  
+
+The techniques developed here are relevant to any setting where correctness depends on identifying when different rewrite paths are semantically the same.
+
 
 See [Appendix A](#appendix-a-what-is-lean4) for a quick introduction to Lean4.
 
